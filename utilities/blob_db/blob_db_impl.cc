@@ -432,8 +432,9 @@ std::shared_ptr<BlobFile> BlobDBImpl::findBlobFile_locked(uint32_t expiration) c
      --finditr;
 
    bool b2 = (*finditr)->ttl_range_.second < expiration;
+   bool b1 = (*finditr)->ttl_range_.first > expiration;
 
-   return (b2) ?  nullptr : (*finditr);
+   return (b1 || b2) ?  nullptr : (*finditr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -525,8 +526,8 @@ std::shared_ptr<BlobFile> BlobDBImpl::selectBlobFileTTL(uint32_t expiration)
   if (bfile)
     return bfile;
 
-  ttlrange_t ttl_guess = std::make_pair(expiration, expiration +
-    bdb_options_.ttl_range);
+  uint32_t exp_low = (expiration / bdb_options_.ttl_range) * bdb_options_.ttl_range;
+  ttlrange_t ttl_guess = std::make_pair(exp_low, exp_low + bdb_options_.ttl_range);
 
   bfile = openNewFile_P1();
   if (!bfile)
